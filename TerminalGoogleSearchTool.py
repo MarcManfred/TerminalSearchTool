@@ -1,6 +1,7 @@
 import webbrowser
 import urllib.parse
 import sys  # needed for reading arguments from terminal
+import argparse
 
 base_url = "https://www.google.com/search?q="
 
@@ -28,26 +29,14 @@ def create_search_filter():
     return website_filter
 
 
-def create_query_string(explicit_search):
-    query_input = sys.argv[1:]
-    if explicit_search:
-        del query_input[0]
-        return urllib.parse.quote(' '.join(query_input) + create_search_filter())
+def create_query_string():
+
+    if args.explicit:
+        return urllib.parse.quote(' '.join(args.query) + create_search_filter())
+    elif args.single:
+        return urllib.parse.quote(' '.join(args.query) + f'(site:{args.single})')
     else:
-        return urllib.parse.quote(' '.join(query_input))
-
-
-def argument_matcher(arguments):
-    match arguments[0]:
-        case "-explicit":
-            print(base_url + create_query_string(True))
-            return base_url + create_query_string(True)
-        case "-help":
-            print(help_message)
-            return ""
-        case _:
-            print(f'{arguments[0]} ' + not_defined_message)
-            return ""
+        return urllib.parse.quote(' '.join(args.query))
 
 
 def create_url():
@@ -55,20 +44,30 @@ def create_url():
     if len(arguments) == 0:
         print("Error: Enter a valid search query")
         return ""
-    elif arguments[0][0] == "-":
-        return argument_matcher(arguments)
     else:
-        print(base_url + create_query_string(False))
-        return base_url + create_query_string(False)
+        return base_url + create_query_string()
 
 
 def start_search():
     final_url = create_url()
     if len(final_url) == 0:
         return
+    print(final_url)
     webbrowser.open(final_url)
     return
 
+
+parser = argparse.ArgumentParser(description="This tool is used to search google from your terminal")
+parser.add_argument("-e", "--explicit", action="store_true", help=f'Includes only result from {valid_websites}')
+parser.add_argument("-s", "--single", help="Include only results from given source.")
+
+parser.add_argument("query", nargs=argparse.REMAINDER)
+
+args = parser.parse_args()
+
+if args.explicit and args.single:
+    print("You can either use single or explicit search.")
+    exit()
 
 start_search()
 
